@@ -11,6 +11,7 @@ import { BluetoothSerial } from '@ionic-native/bluetooth-serial';
 export class HomePage {
 
   public devices: Array<any> = [];
+  public tags: Array<any> = [];
   public status: string = "";
 
   constructor(private ble: BLE,
@@ -38,7 +39,7 @@ export class HomePage {
     this.bluetoothSerial.connect(item.address).subscribe(
       device => {
         console.log("connected: ", device);
-        this.status = `connected: ${device.name}`;
+        this.status = `connected: ${device}`;
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("Subscription : " + JSON.stringify(data));
           this.bluetoothSerial.read().then((data) => { console.log("read data : " + JSON.stringify(data)) });
@@ -50,52 +51,7 @@ export class HomePage {
     )
   }
 
-  // public listen() {
-  //   this.bluetoothSerial.subscribe('\n').subscribe(
-  //     data => {
-  //       console.log('subscribe', data);
-  //     },
-  //     err => {
-  //       console.log('err', err);
-  //     }
-  //   );
-  // }
-
-  // public listenRawData() {
-  //   this.bluetoothSerial.subscribeRawData().subscribe(
-  //     data => {
-  //       console.log('subscribeRawData', data);
-  //     },
-  //     err => {
-  //       console.log('error subscribeRawData', err);
-  //     }
-  //   );
-  // }
-
-  // public read() {
-  //   this.bluetoothSerial.read().then(
-  //     data => {
-  //       console.log('read', data);
-  //     },
-  //     err => {
-  //       console.log('err', err);
-
-  //     }
-  //   )
-  // }
-
   public openInterface() {
-    // Typed Array
-    let data = new Uint8Array(8);
-    data[0] = 0x0d;
-    data[1] = 0x0a;
-    data[2] = 0x0d;
-    data[3] = 0x0a;
-    data[4] = 0x0d;
-    data[5] = 0x0a;
-    data[6] = 0x0d;
-    data[7] = 0x0a;
-
     let data2 = new Uint8Array(8);
     data2[0] = 0x0d;
     data2[1] = 0x0d;
@@ -163,6 +119,18 @@ export class HomePage {
     )
   }
 
+  // set 1 to start beep 0 to stop beep
+  public deactiveBeep() {
+    this.bluetoothSerial.write("Br.beep,0").then(
+      data => {
+        console.log('deactiveBeep ============================================' + data);
+      },
+      err => {
+        console.log('err ' + err);
+      }
+    )
+  }
+
   public getVersion() {
     this.bluetoothSerial.write('ver').then(
       data => {
@@ -178,7 +146,83 @@ export class HomePage {
     )
   }
 
+  public getInventory() {
+    this.bluetoothSerial.write('I').then(
+      data => {
+        console.log('I', data);
+        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+          this.bluetoothSerial.read().then((data) => {
+            console.log("pure data : ", data)
+            let tagId = JSON.stringify(data);
+            console.log("get invertory data : " + tagId);
+            this.tags.push(tagId);
+          });
+        });
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
+  }
 
+  public info(tag) {
+    console.log("info for tag: ", tag);
+
+  }
+
+  //Stop em qualquer coisa que esteja fazendo;
+  public stop() {
+    this.bluetoothSerial.write('s').then(
+      data => {
+        console.log('s', data);
+        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+          this.bluetoothSerial.read().then((data) => {
+            console.log("pure data : ", data)
+            console.log("get invertory data : " + JSON.stringify(data))
+          });
+        });
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
+  }
+
+  //Stop em qualquer coisa que esteja fazendo;
+  public writeTag() {
+    this.bluetoothSerial.write("w,16,2,5,mesa").then(
+      data => {
+        console.log('s', data);
+        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+          this.bluetoothSerial.read().then((data) => {
+            console.log("pure data : ", data)
+            console.log("get invertory data : " + JSON.stringify(data))
+          });
+        });
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
+  }
+
+  //Stop em qualquer coisa que esteja fazendo;
+  public sendReader() {
+    this.bluetoothSerial.write('s').then(
+      data => {
+        console.log('s', data);
+        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+          this.bluetoothSerial.read().then((data) => {
+            console.log("pure data : ", data)
+            console.log("get invertory data : " + JSON.stringify(data))
+          });
+        });
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
+  }
 
   public dataAvaiable() {
     this.bluetoothSerial.available().then(
@@ -186,7 +230,9 @@ export class HomePage {
         console.log('dataAvaiable', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("iter : " + JSON.stringify(data));
-          this.bluetoothSerial.read().then((data) => { console.log("iter data : " + JSON.stringify(data)) });
+          this.bluetoothSerial.read().then((data) => {
+            console.log("iter data : " + JSON.stringify(data))
+          });
         });
       },
       err => {

@@ -5,7 +5,7 @@
 </ion-header>
 
 <ion-content padding>
-  <h2>Welcome to Ionic!</h2>
+  <h2>DOTR-900</h2>
   
   <p>
     Take a look at the <code>src/pages/</code> directory to add or change tabs,
@@ -28,8 +28,15 @@
   <button (click)="getBatteryLevel()">Bateria</button>
   <button (click)="getVersion()">Version</button>
   <button (click)="dataAvaiable()">Data Avaiable</button>
-  
+  <button (click)="getInventory()">Invetory</button>
+  <button (click)="stop()">stop</button>
+  <button (click)="deactiveBeep()">Desativar som</button>
 
+  
   <p>{{satus}}</p>
+
+  <p (click)="info(item)" *ngFor="let item of tags">
+    {{item}}
+  </p>
   
 </ion-content>
