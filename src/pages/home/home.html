@@ -6,12 +6,30 @@
 
 <ion-content padding>
   <h2>Welcome to Ionic!</h2>
-  <p>
-    This starter project comes with simple tabs-based layout for apps
-    that are going to primarily use a Tabbed UI.
-  </p>
+  
   <p>
     Take a look at the <code>src/pages/</code> directory to add or change tabs,
     update any existing page or create new pages.
   </p>
+
+  <button (click)="scan()">Search</button>
+  <!-- <button (click)="connect()">Connect</button> -->
+
+  <p (click)="connect(item)" *ngFor="let item of devices">
+    {{item.name}} -
+    {{item.address}}
+  </p>
+
+  
+  <!-- <button (click)="listen()">listen</button> -->
+  <!-- <button (click)="listenRawData()">listenRawData</button> -->
+  <!-- <button (click)="read()">Read</button> -->
+  <button (click)="openInterface()">openInterface</button>
+  <button (click)="getBatteryLevel()">Bateria</button>
+  <button (click)="getVersion()">Version</button>
+  <button (click)="dataAvaiable()">Data Avaiable</button>
+  
+
+  <p>{{satus}}</p>
+  
 </ion-content>
