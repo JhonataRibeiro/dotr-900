@@ -41,11 +41,13 @@ export class HomePage {
     if (!item) {
       return;
     }
+    this.setStatus("connecting");
     this.connect(item, (statusConnection) => {
       if (statusConnection == 'OK') {
         this.openInterface('from handleConnection', (statusOpenInterface) => {
           if (statusOpenInterface == 'OK') {
             this.connectionOn = true;
+            this.setStatus("");
           }
         })
       }
@@ -53,7 +55,6 @@ export class HomePage {
   }
 
   public connect(item, cb = null) {
-    this.setStatus("connecting");
     if (!item) {
       return;
     }
@@ -63,8 +64,8 @@ export class HomePage {
           cb(status);
         }
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          console.log("Subscription : " + JSON.stringify(data));
           this.bluetoothSerial.read().then((data) => {
+            this.parseTags(data);
             console.log("read data : " + JSON.stringify(data));
           });
         });
@@ -104,7 +105,7 @@ export class HomePage {
     this.bluetoothSerial.write("Br.batt").then(
       data => {
         console.log('Br.batt', data);
-        this.openInterface('batteryLevel', () => { });
+        this.openInterface('Br.batt', () => { });
       },
       err => {
         console.log('err Br.batt 2', err);
@@ -125,18 +126,11 @@ export class HomePage {
     )
   }
 
-  public toggleTeste(param) {
-    console.log(param);
-  }
-
   public getVersion() {
     this.bluetoothSerial.write('ver').then(
-      version => {
-        console.log(`ver: ${version}`);
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          console.log("iter : " + JSON.stringify(data));
-          this.bluetoothSerial.read().then((data) => { console.log("version data : " + JSON.stringify(data)) });
-        });
+      status => {
+        console.log(`ver: ${status}`);
+        this.openInterface('ver', () => { });
       },
       err => {
         console.log('err', err);
@@ -147,14 +141,7 @@ export class HomePage {
   public getInventory() {
     this.bluetoothSerial.write('I').then(
       data => {
-        // this.openInterface('getInventory', () => { });
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          this.bluetoothSerial.read().then((data) => {
-            // console.log("pure data : ", data)
-            this.parseTags(data);
-
-          });
-        });
+        this.openInterface('getInventory', () => { });
       },
       err => {
         console.log('err', err);
@@ -242,22 +229,22 @@ export class HomePage {
     )
   }
 
-  public dataAvaiable() {
-    this.bluetoothSerial.available().then(
-      data => {
-        console.log('dataAvaiable', data);
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          console.log("iter : " + JSON.stringify(data));
-          this.bluetoothSerial.read().then((data) => {
-            console.log("data avaiable data : " + JSON.stringify(data))
-          });
-        });
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
-  }
+  // public dataAvaiable() {
+  //   this.bluetoothSerial.available().then(
+  //     data => {
+  //       console.log('dataAvaiable', data);
+  //       this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+  //         console.log("iter : " + JSON.stringify(data));
+  //         this.bluetoothSerial.read().then((data) => {
+  //           console.log("data avaiable data : " + JSON.stringify(data))
+  //         });
+  //       });
+  //     },
+  //     err => {
+  //       console.log('err', err);
+  //     }
+  //   )
+  // }
 
 
 
