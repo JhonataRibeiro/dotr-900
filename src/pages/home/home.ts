@@ -226,7 +226,6 @@ export class HomePage {
     )
   }
 
-  //Stop em qualquer coisa que esteja fazendo;
   public sendReader() {
     this.bluetoothSerial.write('s').then(
       data => {
