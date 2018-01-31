@@ -11,7 +11,7 @@ import { TabsPage } from '../pages/tabs/tabs';
   providers: [BluetoothSerial]
 })
 export class MyApp {
-  rootPage:any = TabsPage;
+  rootPage:any = TabsPage;  
 
   constructor(bluetoothSerial:BluetoothSerial,platform: Platform, statusBar: StatusBar, splashScreen: SplashScreen) {
     platform.ready().then(() => {

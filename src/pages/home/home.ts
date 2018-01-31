@@ -13,35 +13,61 @@ export class HomePage {
   public devices: Array<any> = [];
   public tags: Array<any> = [];
   public status: string = "";
+  public connectionOn: boolean = false;
 
   constructor(private ble: BLE,
     public navCtrl: NavController,
     private bluetoothSerial: BluetoothSerial) {
   }
 
+  public setStatus(status) {
+    this.status = status;
+  }
+
   public scan() {
+    this.setStatus("scanning");
     this.bluetoothSerial.list().then(
       data => {
-        console.log(data)
+        this.setStatus("");
         this.devices = data;
       },
       err => {
+        this.setStatus("Error on scan, retry!!");
         console.log(err);
       }
     )
   }
 
-  public connect(item) {
+  public handleConnection(item) {
     if (!item) {
       return;
     }
-    console.log(item);
+    this.connect(item, (statusConnection) => {
+      if (statusConnection == 'OK') {
+        this.openInterface('from handleConnection', (statusOpenInterface) => {
+          if (statusOpenInterface == 'OK') {
+            this.connectionOn = true;
+          }
+        })
+      }
+    })
+  }
+
+  public connect(item, cb = null) {
+    this.setStatus("connecting");
+    if (!item) {
+      return;
+    }
     this.bluetoothSerial.connect(item.address).subscribe(
-      device => {
-        console.log("connected: ", device);
+      status => {
+        if (cb) {
+          cb(status);
+        }
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("Subscription : " + JSON.stringify(data));
-          this.bluetoothSerial.read().then((data) => { console.log("read data : " + JSON.stringify(data)) });
+          this.bluetoothSerial.read().then((data) => {
+            console.log("read data : " + JSON.stringify(data));
+          });
         });
       },
       err => {
@@ -50,7 +76,9 @@ export class HomePage {
     )
   }
 
-  public openInterface() {
+  public openInterface(log: string = '', cb) {
+    this.setStatus("opening interface");
+    console.log(log);
     let data = new Uint8Array(8);
     data[0] = 0x0d;
     data[1] = 0x0d;
@@ -62,37 +90,23 @@ export class HomePage {
     data[7] = 0x0d;
 
     this.bluetoothSerial.write(data).then(
-      data => {
-        console.log('open interface', data);
+      status => {
+        this.setStatus("interface oppended");
+        cb(status)
       },
       err => {
+        this.setStatus("Error on open interface");
         console.log('err', err);
       }
     )
   }
 
-  private subscriber(data: any) {
-    console.log('subscriber function', data);
-    this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-      console.log("Subscription : " + JSON.stringify(data));
-      this.bluetoothSerial.read().then((data) => { console.log("subscriber data function : " + JSON.stringify(data)) });
-    });
-  }
 
   public getBatteryLevel() {
     this.bluetoothSerial.write("Br.batt").then(
       data => {
         console.log('Br.batt', data);
-        this.openInterface();
-        // this.dataAvaiable();
-        // this.bluetoothSerial.subscribe('\n').subscribe(
-        //   data => {
-        //     this.subscriber(data);
-        //   },
-        //   err => {
-        //     console.log('err interface', err);
-        //   }
-        // );
+        this.openInterface('batteryLevel', () => { });
       },
       err => {
         console.log('err Br.batt 2', err);
@@ -103,10 +117,9 @@ export class HomePage {
 
   // set 1 to start beep 0 to stop beep
   public disableBeep(param) {
-    console.log('param: ', param);
     this.bluetoothSerial.write(`Br.beep,${param ? 1 : 0}`).then(
       data => {
-        console.log('deactiveBeep ============================================' + data);
+        console.log(`beep: ${param ? 'on' : 'off'}`);
       },
       err => {
         console.log('err ' + err);
@@ -120,8 +133,8 @@ export class HomePage {
 
   public getVersion() {
     this.bluetoothSerial.write('ver').then(
-      data => {
-        console.log('ver', data);
+      version => {
+        console.log(`ver: ${version}`);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("iter : " + JSON.stringify(data));
           this.bluetoothSerial.read().then((data) => { console.log("version data : " + JSON.stringify(data)) });
@@ -136,16 +149,12 @@ export class HomePage {
   public getInventory() {
     this.bluetoothSerial.write('I').then(
       data => {
-        console.log('I', data);
+        // this.openInterface('getInventory', () => { });
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data)
-            let tagId = JSON.stringify(data);
-            console.log("get invertory data : " + tagId);
-            this.findIndexByTag(tagId,data=>{
-              console.log('in array: ', data);
-              // this.tags.push(tagId);
-            })
+            // console.log("pure data : ", data)
+            this.parseTags(data);
+            
           });
         });
       },
@@ -155,30 +164,50 @@ export class HomePage {
     )
   }
 
-  public findIndexByTag(element,cb) {
+  public parseTags(tags) {
+    console.log('============================tags===========================');
+    console.log('tags ', tags);
+    let tagsSplited = tags.split('\r');
+    let filteredTags = tagsSplited.filter((tag) => {
+      let stringTag = new String(tag);
+      return stringTag.startsWith("3") && stringTag.length == 32
+    });
+    console.log(filteredTags);
+    filteredTags.forEach(element => {
+      this.tags.push(element.slice(22,28))
+    });
+    
+    console.log('============================tags end===========================');
+
+  }
+
+  public findIndexByTag(element, cb) {
     let tagInArray = false;
-    for (var i = 0; i < this.devices.length; i++) {
-      if (this.devices[i] === element) tagInArray = true;
+    if (this.tags.length == 0) {
+      tagInArray = true;
+    }
+    for (var i = 0; i < this.tags.length; i++) {
+      if (this.tags[i] === element) tagInArray = true;
     }
     cb(tagInArray);
   }
 
-  public info(tag) {
-    console.log("info for tag: ", tag);
-
+  public clear() {
+    this.tags = [];
   }
 
   //Stop em qualquer coisa que esteja fazendo;
   public stop() {
     this.bluetoothSerial.write('s').then(
       data => {
-        console.log('s', data);
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data)
-            console.log("get invertory data : " + JSON.stringify(data))
-          });
-        });
+        console.log('stop', data);
+        this.openInterface('stop', () => { });
+        // this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+        //   this.bluetoothSerial.read().then((data) => {
+        //     console.log("pure data : ", data)
+        //     console.log("get invertory data : " + JSON.stringify(data))
+        //   });
+        // });
       },
       err => {
         console.log('err', err);
