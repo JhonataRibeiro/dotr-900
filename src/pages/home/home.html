@@ -30,9 +30,13 @@
   <button (click)="dataAvaiable()">Data Avaiable</button>
   <button (click)="getInventory()">Invetory</button>
   <button (click)="stop()">stop</button>
-  <button (click)="deactiveBeep()">Desativar som</button>
+  <button (click)="disableBeep()">Desativar som</button>
 
-  
+  <ion-item>
+    <ion-label>Alerta Sonoro</ion-label>
+    <ion-toggle (ionChange)="disableBeep($event.value)" checked="false"></ion-toggle>
+  </ion-item>
+
   <p>{{satus}}</p>
 
   <p (click)="info(item)" *ngFor="let item of tags">

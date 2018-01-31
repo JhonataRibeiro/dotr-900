@@ -39,7 +39,6 @@ export class HomePage {
     this.bluetoothSerial.connect(item.address).subscribe(
       device => {
         console.log("connected: ", device);
-        this.status = `connected: ${device}`;
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("Subscription : " + JSON.stringify(data));
           this.bluetoothSerial.read().then((data) => { console.log("read data : " + JSON.stringify(data)) });
@@ -52,65 +51,48 @@ export class HomePage {
   }
 
   public openInterface() {
-    let data2 = new Uint8Array(8);
-    data2[0] = 0x0d;
-    data2[1] = 0x0d;
-    data2[2] = 0x0d;
-    data2[3] = 0x0d;
-    data2[4] = 0x0d;
-    data2[5] = 0x0d;
-    data2[6] = 0x0d;
-    data2[7] = 0x0d;
+    let data = new Uint8Array(8);
+    data[0] = 0x0d;
+    data[1] = 0x0d;
+    data[2] = 0x0d;
+    data[3] = 0x0d;
+    data[4] = 0x0d;
+    data[5] = 0x0d;
+    data[6] = 0x0d;
+    data[7] = 0x0d;
 
-    this.bluetoothSerial.write(data2).then(
+    this.bluetoothSerial.write(data).then(
       data => {
         console.log('open interface', data);
-        this.bluetoothSerial.subscribe('\n').subscribe(
-          data => {
-            console.log('iter interface', data);
-            this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-              console.log("iter : " + JSON.stringify(data));
-              this.bluetoothSerial.read().then((data) => { console.log("iter data : " + JSON.stringify(data)) });
-            });
-          },
-          err => {
-            console.log('err interface', err);
-          }
-        );
       },
       err => {
         console.log('err', err);
-
       }
     )
   }
 
-  public str2ab(str) {
-    var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
-    var bufView = new Uint16Array(buf);
-    for (var i = 0, strLen = str.length; i < strLen; i++) {
-      bufView[i] = str.charCodeAt(i);
-    }
-    return buf;
+  private subscriber(data: any) {
+    console.log('subscriber function', data);
+    this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+      console.log("Subscription : " + JSON.stringify(data));
+      this.bluetoothSerial.read().then((data) => { console.log("subscriber data function : " + JSON.stringify(data)) });
+    });
   }
 
   public getBatteryLevel() {
-
     this.bluetoothSerial.write("Br.batt").then(
       data => {
         console.log('Br.batt', data);
-        this.bluetoothSerial.subscribe('\n').subscribe(
-          data => {
-            console.log('subscribe Br.batt', data);
-            this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-              console.log("iter : " + JSON.stringify(data));
-              this.bluetoothSerial.read().then((data) => { console.log("iter data : " + JSON.stringify(data)) });
-            });
-          },
-          err => {
-            console.log('err Br.batt', err);
-          }
-        );
+        this.openInterface();
+        // this.dataAvaiable();
+        // this.bluetoothSerial.subscribe('\n').subscribe(
+        //   data => {
+        //     this.subscriber(data);
+        //   },
+        //   err => {
+        //     console.log('err interface', err);
+        //   }
+        // );
       },
       err => {
         console.log('err Br.batt 2', err);
@@ -120,8 +102,9 @@ export class HomePage {
   }
 
   // set 1 to start beep 0 to stop beep
-  public deactiveBeep() {
-    this.bluetoothSerial.write("Br.beep,0").then(
+  public disableBeep(param) {
+    console.log('param: ', param);
+    this.bluetoothSerial.write(`Br.beep,${param ? 1 : 0}`).then(
       data => {
         console.log('deactiveBeep ============================================' + data);
       },
@@ -131,13 +114,17 @@ export class HomePage {
     )
   }
 
+  public toggleTeste(param) {
+    console.log(param);
+  }
+
   public getVersion() {
     this.bluetoothSerial.write('ver').then(
       data => {
         console.log('ver', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("iter : " + JSON.stringify(data));
-          this.bluetoothSerial.read().then((data) => { console.log("iter data : " + JSON.stringify(data)) });
+          this.bluetoothSerial.read().then((data) => { console.log("version data : " + JSON.stringify(data)) });
         });
       },
       err => {
@@ -155,7 +142,10 @@ export class HomePage {
             console.log("pure data : ", data)
             let tagId = JSON.stringify(data);
             console.log("get invertory data : " + tagId);
-            this.tags.push(tagId);
+            this.findIndexByTag(tagId,data=>{
+              console.log('in array: ', data);
+              // this.tags.push(tagId);
+            })
           });
         });
       },
@@ -163,6 +153,14 @@ export class HomePage {
         console.log('err', err);
       }
     )
+  }
+
+  public findIndexByTag(element,cb) {
+    let tagInArray = false;
+    for (var i = 0; i < this.devices.length; i++) {
+      if (this.devices[i] === element) tagInArray = true;
+    }
+    cb(tagInArray);
   }
 
   public info(tag) {
@@ -231,7 +229,7 @@ export class HomePage {
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           console.log("iter : " + JSON.stringify(data));
           this.bluetoothSerial.read().then((data) => {
-            console.log("iter data : " + JSON.stringify(data))
+            console.log("data avaiable data : " + JSON.stringify(data))
           });
         });
       },
