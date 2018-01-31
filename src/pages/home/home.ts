@@ -154,7 +154,7 @@ export class HomePage {
           this.bluetoothSerial.read().then((data) => {
             // console.log("pure data : ", data)
             this.parseTags(data);
-            
+
           });
         });
       },
@@ -165,20 +165,14 @@ export class HomePage {
   }
 
   public parseTags(tags) {
-    console.log('============================tags===========================');
-    console.log('tags ', tags);
     let tagsSplited = tags.split('\r');
     let filteredTags = tagsSplited.filter((tag) => {
       let stringTag = new String(tag);
       return stringTag.startsWith("3") && stringTag.length == 32
     });
-    console.log(filteredTags);
     filteredTags.forEach(element => {
-      this.tags.push(element.slice(22,28))
+      this.tags.push(element.slice(22, 28))
     });
-    
-    console.log('============================tags end===========================');
-
   }
 
   public findIndexByTag(element, cb) {
