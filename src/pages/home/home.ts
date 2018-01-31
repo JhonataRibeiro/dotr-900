@@ -101,7 +101,6 @@ export class HomePage {
     )
   }
 
-
   public getBatteryLevel() {
     this.bluetoothSerial.write("Br.batt").then(
       data => {
