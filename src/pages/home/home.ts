@@ -114,7 +114,6 @@ export class HomePage {
     )
   }
 
-  // set 1 to start beep 0 to stop beep
   public disableBeep(param) {
     this.bluetoothSerial.write(`Br.beep,${param ? 1 : 0}`).then(
       data => {
@@ -175,18 +174,11 @@ export class HomePage {
     this.tags = [];
   }
 
-  //Stop em qualquer coisa que esteja fazendo;
   public stop() {
     this.bluetoothSerial.write('s').then(
       data => {
         console.log('stop', data);
         this.openInterface('stop', () => { });
-        // this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-        //   this.bluetoothSerial.read().then((data) => {
-        //     console.log("pure data : ", data)
-        //     console.log("get invertory data : " + JSON.stringify(data))
-        //   });
-        // });
       },
       err => {
         console.log('err', err);
@@ -194,7 +186,6 @@ export class HomePage {
     )
   }
 
-  //Stop em qualquer coisa que esteja fazendo;
   public writeTag() {
     this.bluetoothSerial.write("w,16,2,5,mesa").then(
       data => {
