@@ -157,21 +157,21 @@ export class HomePage {
 
     filteredTags.forEach(element => {
       this.isIncluded(element.slice(22, 28), status => {
+        console.log('isIncluded=> ' + element.slice(22, 28) + ' status=> ', status);
+
         if (!status) {
           this.getPatrimonyByTag(element.slice(22, 28), (data, err) => {
-            let tagObj = {
-              patrimony: {},
-              tag: ""
-            };
             if (err) {
               console.log('err', data)
             }
-            if (data) {
-              tagObj.patrimony = data;
-              tagObj.tag = element.slice(22, 28);
+            if (data != null) {
+              let tagObj = {
+                patrimony: data,
+                tag: element.slice(22, 28)
+              };
+              console.log('taaab=> ', tagObj);
+              this.tags.push(tagObj);
             }
-            console.log('taaab=> ', tagObj);
-            this.tags.push(tagObj);
           })
         }
       })
