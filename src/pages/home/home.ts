@@ -101,23 +101,20 @@ export class HomePage {
     )
   }
 
-  public getBatteryLevel() {
-    this.bluetoothSerial.write("Br.batt").then(
-      data => {
-        console.log('Br.batt', data);
-        this.openInterface('Br.batt', () => { });
-      },
-      err => {
-        console.log('err Br.batt 2', err);
-
-      }
-    )
+  public async getBatteryLevel() {
+    try {
+      let bateryLevel = await this.bluetoothSerial.write("Br.batt");
+      this.openInterface('Br.batt', () => console.log('Br.batt sucssess'));
+    } catch (err) {
+      console.log(`There was an error: ${err}`);
+    }
   }
 
   public disableBeep(param) {
     this.bluetoothSerial.write(`Br.beep,${param ? 1 : 0}`).then(
       data => {
         console.log(`beep: ${param ? 'on' : 'off'}`);
+        this.openInterface('Br.beep', () => console.log('Br.beep sucssess'));
       },
       err => {
         console.log('err ' + err);
@@ -150,24 +147,42 @@ export class HomePage {
 
   public parseTags(tags) {
     let tagsSplited = tags.split('\r');
+
     let filteredTags = tagsSplited.filter((tag) => {
       let stringTag = new String(tag);
       return stringTag.startsWith("3") && stringTag.length == 32
     });
+
+    // let checked = filteredTags.filter(element => {
+    //   this.isIncluded(element.slice(22, 28), status => {
+    //     if (!status) {
+    //       return element;
+    //     }
+    //   })
+    // });
+
     filteredTags.forEach(element => {
-      this.tags.push(element.slice(22, 28))
+      this.isIncluded(element.slice(22, 28), status => {
+        if (!status) {
+          this.tags.push(element.slice(22, 28))
+        }
+      })
     });
+
+    // checked.forEach(element => {
+    //   this.tags.push(element.slice(22, 28))
+    // });
   }
 
-  public findIndexByTag(element, cb) {
-    let tagInArray = false;
-    if (this.tags.length == 0) {
-      tagInArray = true;
-    }
+  public isIncluded(element, cb) {
+    let included = false;
     for (var i = 0; i < this.tags.length; i++) {
-      if (this.tags[i] === element) tagInArray = true;
+      if (this.tags[i] === element) {
+        included = true;
+        break;
+      }
     }
-    cb(tagInArray);
+    cb(included);
   }
 
   public clear() {

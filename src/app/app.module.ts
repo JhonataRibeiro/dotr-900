@@ -11,6 +11,8 @@ import { TabsPage } from '../pages/tabs/tabs';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { ConnectionProvider } from '../providers/connection/connection';
+import { PatrimonyProvider } from '../providers/patrimony/patrimony';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [
@@ -22,7 +24,8 @@ import { ConnectionProvider } from '../providers/connection/connection';
   ],
   imports: [
     BrowserModule,
-    IonicModule.forRoot(MyApp)
+    IonicModule.forRoot(MyApp),
+    HttpClientModule
   ],
   bootstrap: [IonicApp],
   entryComponents: [
@@ -36,7 +39,8 @@ import { ConnectionProvider } from '../providers/connection/connection';
     StatusBar,
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
-    ConnectionProvider
+    ConnectionProvider,
+    PatrimonyProvider
   ]
 })
 export class AppModule {}
