@@ -19,11 +19,12 @@ export class PatrimonyProvider {
     this.host = HOST_API;
   }
 
-  public getById(): Observable<Patrimony> {
-    return this.http.get<Patrimony>(this.host + '/patrimony/111');
+  public getByTag(tag:String): Observable<Patrimony> {
+    return this.http.get<Patrimony>(`${this.host}/patrimony/${tag}`);
   }
 
   public save(patrimony: Patrimony): Observable<Patrimony> {
-    return this.http.post<Patrimony>(this.host + '/patrimony', patrimony);
+    console.log('send', patrimony);
+    return this.http.post<Patrimony>(`${this.host}/patrimony`, patrimony);
   }
 }

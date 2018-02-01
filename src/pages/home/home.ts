@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { BluetoothSerial } from '@ionic-native/bluetooth-serial';
+import { PatrimonyProvider } from '../../providers/patrimony/patrimony';
 
 @Component({
   selector: 'page-home',
@@ -16,7 +17,8 @@ export class HomePage {
 
   constructor(
     public navCtrl: NavController,
-    private bluetoothSerial: BluetoothSerial) {
+    private bluetoothSerial: BluetoothSerial,
+    private patrimonyProvider: PatrimonyProvider) {
   }
 
   public setStatus(status) {
@@ -164,7 +166,21 @@ export class HomePage {
     filteredTags.forEach(element => {
       this.isIncluded(element.slice(22, 28), status => {
         if (!status) {
-          this.tags.push(element.slice(22, 28))
+          this.getPatrimonyByTag(element.slice(22, 28), (data,err) =>{
+            let tagObj = {
+              patrimony:{},
+              tag:""
+            };
+            if(err){
+              console.log('err',data)
+            }
+            if(data){
+              tagObj.patrimony = data;
+              tagObj.tag = element.slice(22, 28);
+            }
+            console.log('taaab=> ', tagObj);
+            this.tags.push(tagObj);
+          })
         }
       })
     });
@@ -174,10 +190,23 @@ export class HomePage {
     // });
   }
 
+  getPatrimonyByTag(tag:String,cb){
+    this.patrimonyProvider.getByTag(tag).subscribe(
+      data=>{
+        console.log(data);
+        cb(data,null);
+      },
+      err=>{
+        console.log('error: ', err);
+        cb(null,err);
+      }
+    )
+  }
+
   public isIncluded(element, cb) {
     let included = false;
     for (var i = 0; i < this.tags.length; i++) {
-      if (this.tags[i] === element) {
+      if (this.tags[i].tag === element) {
         included = true;
         break;
       }

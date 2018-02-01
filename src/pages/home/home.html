@@ -42,7 +42,7 @@
   <p>{{satus}}</p>
 
   <p (click)="info(item)" *ngFor="let item of tags">
-    {{item}}
+    {{item.tag}} - <span *ngIf="item && item.patrimony && item.patrimony.name">{{item.patrimony.name}}</span>
   </p>
   
 </ion-content>

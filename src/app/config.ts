@@ -1,1 +1,1 @@
-export const HOST_API = 'http://localhost:8080';
+export const HOST_API = 'http://192.168.1.25:8080';
