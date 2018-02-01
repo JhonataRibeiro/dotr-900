@@ -155,26 +155,18 @@ export class HomePage {
       return stringTag.startsWith("3") && stringTag.length == 32
     });
 
-    // let checked = filteredTags.filter(element => {
-    //   this.isIncluded(element.slice(22, 28), status => {
-    //     if (!status) {
-    //       return element;
-    //     }
-    //   })
-    // });
-
     filteredTags.forEach(element => {
       this.isIncluded(element.slice(22, 28), status => {
         if (!status) {
-          this.getPatrimonyByTag(element.slice(22, 28), (data,err) =>{
+          this.getPatrimonyByTag(element.slice(22, 28), (data, err) => {
             let tagObj = {
-              patrimony:{},
-              tag:""
+              patrimony: {},
+              tag: ""
             };
-            if(err){
-              console.log('err',data)
+            if (err) {
+              console.log('err', data)
             }
-            if(data){
+            if (data) {
               tagObj.patrimony = data;
               tagObj.tag = element.slice(22, 28);
             }
@@ -184,21 +176,17 @@ export class HomePage {
         }
       })
     });
-
-    // checked.forEach(element => {
-    //   this.tags.push(element.slice(22, 28))
-    // });
   }
 
-  getPatrimonyByTag(tag:String,cb){
+  getPatrimonyByTag(tag: String, cb) {
     this.patrimonyProvider.getByTag(tag).subscribe(
-      data=>{
+      data => {
         console.log(data);
-        cb(data,null);
+        cb(data, null);
       },
-      err=>{
+      err => {
         console.log('error: ', err);
-        cb(null,err);
+        cb(null, err);
       }
     )
   }
@@ -263,24 +251,5 @@ export class HomePage {
       }
     )
   }
-
-  // public dataAvaiable() {
-  //   this.bluetoothSerial.available().then(
-  //     data => {
-  //       console.log('dataAvaiable', data);
-  //       this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-  //         console.log("iter : " + JSON.stringify(data));
-  //         this.bluetoothSerial.read().then((data) => {
-  //           console.log("data avaiable data : " + JSON.stringify(data))
-  //         });
-  //       });
-  //     },
-  //     err => {
-  //       console.log('err', err);
-  //     }
-  //   )
-  // }
-
-
 
 }
