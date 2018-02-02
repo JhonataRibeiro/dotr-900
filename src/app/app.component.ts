@@ -19,14 +19,14 @@ export class MyApp {
       // Here you can do any higher level native things you might need.
       statusBar.styleDefault();
       splashScreen.hide();
-      bluetoothSerial.subscribeRawData().subscribe(
-        data=>{
-          console.log('subscribeRawData', data);
-        },
-        err=>{
-          console.log('error subscribeRawData', err);
-        }
-    );
+    //   bluetoothSerial.subscribeRawData().subscribe(
+    //     data=>{
+    //       console.log('subscribeRawData', data);
+    //     },
+    //     err=>{
+    //       console.log('error subscribeRawData', err);
+    //     }
+    // );
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { BluetoothSerial } from '@ionic-native/bluetooth-serial';
 import { PatrimonyProvider } from '../../providers/patrimony/patrimony';
@@ -13,16 +13,42 @@ export class HomePage {
   public devices: Array<any> = [];
   public tags: Array<any> = [];
   public status: string = "";
-  public connectionOn: boolean = false;
+  public showBeep: boolean = false;
+  public connected: boolean = false;
+  public batteryLevel: String = "";
+  public inventoring:boolean = false;
+  public solicitante:String = "";
 
   constructor(
     public navCtrl: NavController,
     private bluetoothSerial: BluetoothSerial,
-    private patrimonyProvider: PatrimonyProvider) {
-  }
+    private patrimonyProvider: PatrimonyProvider,
+    private cdr: ChangeDetectorRef,
+    public zone: NgZone, ) {
+      this.registerSubscribeData();
+    }
+
+  public registerSubscribeData(){
+    this.bluetoothSerial.subscribeRawData().subscribe((data) => {
+      this.bluetoothSerial.read().then((data) => {
+        console.log(data);
+        this.parseTags(data);
+        if(this.solicitante == 'bateria'){
+          console.log(data.slice(6,8));
+          this.zone.run(() => {
+            this.batteryLevel = data.slice(6,8);
+          });
+        }
+      });
+    });
+  }  
 
   public setStatus(status) {
     this.status = status;
+  }
+
+  public setSolicitante(param){
+    this.solicitante = param;
   }
 
   public scan() {
@@ -33,7 +59,7 @@ export class HomePage {
         this.devices = data;
       },
       err => {
-        this.setStatus("Error on scan, retry!!");
+        this.setStatus("Error on scan, retry!!"); 
         console.log(err);
       }
     )
@@ -48,13 +74,18 @@ export class HomePage {
       if (statusConnection == 'OK') {
         this.openInterface('from handleConnection', (statusOpenInterface) => {
           if (statusOpenInterface == 'OK') {
-            this.connectionOn = true;
-            this.setStatus("");
+            this.getBatteryLevel();
+            this.zone.run(() => {
+              this.connected = true;
+              this.setStatus("");
+            });
           }
         })
       }
     })
   }
+
+
 
   public connect(item, cb = null) {
     if (!item) {
@@ -65,12 +96,6 @@ export class HomePage {
         if (cb) {
           cb(status);
         }
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          this.bluetoothSerial.read().then((data) => {
-            this.parseTags(data);
-            console.log("read data : " + JSON.stringify(data));
-          });
-        });
       },
       err => {
         console.log("error on connect: ", err);
@@ -80,7 +105,6 @@ export class HomePage {
 
   public openInterface(log: string = '', cb) {
     this.setStatus("opening interface");
-    console.log(log);
     let data = new Uint8Array(8);
     data[0] = 0x0d;
     data[1] = 0x0d;
@@ -107,16 +131,20 @@ export class HomePage {
     try {
       let bateryLevel = await this.bluetoothSerial.write("Br.batt");
       this.openInterface('Br.batt', () => console.log('Br.batt sucssess'));
+      this.solicitante = 'bateria';
     } catch (err) {
       console.log(`There was an error: ${err}`);
     }
   }
 
-  public disableBeep(param) {
+  public toogleBeep(param) {
     this.bluetoothSerial.write(`Br.beep,${param ? 1 : 0}`).then(
       data => {
         console.log(`beep: ${param ? 'on' : 'off'}`);
-        this.openInterface('Br.beep', () => console.log('Br.beep sucssess'));
+        this.openInterface('Br.beep', () => {
+          console.log('Br.beep sucssess')
+          this.showBeep = param;
+        });
       },
       err => {
         console.log('err ' + err);
@@ -128,6 +156,7 @@ export class HomePage {
     this.bluetoothSerial.write('ver').then(
       status => {
         console.log(`ver: ${status}`);
+        this.solicitante = 'versão';
         this.openInterface('ver', () => { });
       },
       err => {
@@ -139,7 +168,22 @@ export class HomePage {
   public getInventory() {
     this.bluetoothSerial.write('I').then(
       data => {
-        this.openInterface('getInventory', () => { });
+        this.inventoring = true;
+        this.solicitante = 'inventário';
+        this.openInterface('stop', () => { });
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
+  }
+
+  public stop() {
+    this.bluetoothSerial.write('s').then(
+      data => {
+        console.log('stop', data);
+        this.inventoring = false;
+        this.openInterface('stop', () => { });
       },
       err => {
         console.log('err', err);
@@ -170,7 +214,10 @@ export class HomePage {
                 tag: element.slice(22, 28)
               };
               console.log('taaab=> ', tagObj);
-              this.tags.push(tagObj);
+              this.zone.run(() => {
+                console.log('oook');
+                this.tags.push(tagObj);
+              });
             }
           })
         }
@@ -206,25 +253,14 @@ export class HomePage {
     this.tags = [];
   }
 
-  public stop() {
-    this.bluetoothSerial.write('s').then(
-      data => {
-        console.log('stop', data);
-        this.openInterface('stop', () => { });
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
-  }
-
   public writeTag() {
     this.bluetoothSerial.write("w,16,2,5,mesa").then(
       data => {
         console.log('s', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data)
+            console.log("pure data : ", data.slice(3,5));
+            this.batteryLevel = data.slice(3,5);
             console.log("get invertory data : " + JSON.stringify(data))
           });
         });
