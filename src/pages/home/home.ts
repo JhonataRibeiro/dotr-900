@@ -85,8 +85,6 @@ export class HomePage {
     })
   }
 
-
-
   public connect(item, cb = null) {
     if (!item) {
       return;
@@ -96,6 +94,17 @@ export class HomePage {
         if (cb) {
           cb(status);
         }
+      },
+      err => {
+        console.log("error on connect: ", err);
+      }
+    )
+  }
+
+  public isConnected() {
+    this.bluetoothSerial.isConnected().then(
+      status => {
+        console.log('isConnected=> ', status);
       },
       err => {
         console.log("error on connect: ", err);
