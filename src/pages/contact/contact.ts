@@ -35,15 +35,11 @@ export class ContactPage implements OnInit{
   }
 
   public async onSubmit(){
-    this.patrimonyProvider.save(this.newPatrimonyForm.value).subscribe(
-      data=>{
-        console.log("data ", data);
-      },
-      err=>{
-        console.log("err", err);
-      }
-    );
-    
+    try {
+      let patrimony = await this.patrimonyProvider.save(this.newPatrimonyForm.value).toPromise();
+    } catch (error) {
+      console.log('error: ', error);
+    }
   }
 
 }

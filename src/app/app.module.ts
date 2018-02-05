@@ -2,6 +2,8 @@ import { NgModule, ErrorHandler } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicModule, IonicErrorHandler } from 'ionic-angular';
 import { MyApp } from './app.component';
+import { Loader } from '../utils/loader/loader';
+import { Message } from '../utils/message/message';
 
 import { AboutPage } from '../pages/about/about';
 import { ContactPage } from '../pages/contact/contact';
@@ -40,7 +42,9 @@ import { HttpClientModule } from '@angular/common/http';
     SplashScreen,
     {provide: ErrorHandler, useClass: IonicErrorHandler},
     ConnectionProvider,
-    PatrimonyProvider
+    PatrimonyProvider,
+    Loader,
+    Message
   ]
 })
 export class AppModule {}

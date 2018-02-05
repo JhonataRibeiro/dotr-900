@@ -2,11 +2,14 @@ import { Component, NgZone, ChangeDetectorRef } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { BluetoothSerial } from '@ionic-native/bluetooth-serial';
 import { PatrimonyProvider } from '../../providers/patrimony/patrimony';
+import { Loader } from '../../utils/loader/loader';
+import { Message } from '../../utils/message/message';
+import { R900Protocol } from '../../utils/protocol/r900Protocol'
 
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html',
-  providers: [BluetoothSerial]
+  providers: [BluetoothSerial, Loader, Message]
 })
 export class HomePage {
 
@@ -16,66 +19,83 @@ export class HomePage {
   public showBeep: boolean = false;
   public connected: boolean = false;
   public batteryLevel: String = "";
-  public inventoring:boolean = false;
-  public requester:String = "";
+  public inventoring: boolean = false;
+  public requester: String = "";
 
   constructor(
     private navCtrl: NavController,
     private bluetoothSerial: BluetoothSerial,
     private patrimonyProvider: PatrimonyProvider,
-    private zone: NgZone, ) {
-      this.registerSubscribeData();
-    }
+    private zone: NgZone,
+    private loader: Loader,
+    private message: Message) {
+    this.registerSubscribeData();
+  }
 
-  public registerSubscribeData(){
+  public registerSubscribeData() {
     this.bluetoothSerial.subscribeRawData().subscribe((data) => {
       this.bluetoothSerial.read().then((data) => {
         console.log(data);
-        if((data.indexOf("online=0")) >= 0){
+        if ((data.indexOf("online=0")) >= 0) {
           this.setConnection(false);
         }
+
+        if ((data.indexOf("CONNECT F0D7AA6993CE")) >= 0) {
+          this.setConnection(false);
+          this.message.notify('Erro ao conectar, reinicie o device(DOTR-900) e tente novamente!');
+        }
+
         this.parseTags(data);
-        if(this.requester == 'battery'){
+        if (this.requester == 'battery') {
           this.zone.run(() => {
-            this.batteryLevel = data.slice(6,8);
+            this.batteryLevel = data.slice(6, 8);
             this.clearRequester();
           });
         }
       });
     });
-  }  
+  }
 
   public setStatus(status) {
     this.status = status;
   }
 
-  public setRequester(param){
+  public setRequester(param) {
     this.requester = param;
   }
 
-  public clearRequester(){
+  public clearRequester() {
     this.requester = '';
   }
 
-  public scan() {
-    this.setStatus("scanning");
-    this.bluetoothSerial.list().then(
-      data => {
-        this.setStatus("");
-        this.devices = data;
-      },
-      err => {
-        this.setStatus("Error on scan, retry!!"); 
-        console.log(err);
-      }
-    )
+  public clearDevices(){
+    this.devices = [];
+  }
+
+  public async scan() {
+    try {
+      this.checkBluetothIsEnabled();
+      let devicesFound = await this.bluetoothSerial.list();
+      this.devices = devicesFound;
+    } catch (error) {
+      console.log('error: ', error);
+
+    }
+  }
+
+  public async checkBluetothIsEnabled() {
+    try {
+      let bluethothStatus = await this.bluetoothSerial.isEnabled();
+      console.log('bluethothStatus =>', bluethothStatus);
+    } catch (error) {
+      console.log('error: ', error);
+    }
   }
 
   public handleConnection(item) {
     if (!item) {
       return;
     }
-    this.setStatus("connecting");
     this.connect(item, (statusConnection) => {
       if (statusConnection == 'OK') {
         this.openInterface('from handleConnection', (statusOpenInterface) => {
@@ -83,7 +103,7 @@ export class HomePage {
             this.getBatteryLevel();
             this.zone.run(() => {
               this.connected = true;
-              this.setStatus("");
+              this.clearDevices();
             });
           }
         })
@@ -102,9 +122,19 @@ export class HomePage {
         }
       },
       err => {
-        if(err == 'error on connect:  Device connection was lost') this.setConnection(false); 
+        if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
       }
     )
+  }
+
+  public async turnOff() {
+    try {
+      let bateryLevel = await this.bluetoothSerial.write("Br.off");
+      this.openInterface('Br.off', () => console.log('Br.off sucssess'));
+      this.clearDevices();
+    } catch (err) {
+      console.log(`There was an error: ${err}`);
+    }
   }
 
   public isConnected() {
@@ -114,19 +144,18 @@ export class HomePage {
       },
       err => {
         console.log("error on connect: ", err);
-        if(err == 'error on connect:  Device connection was lost') this.setConnection(false);         
+        if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
       }
     )
   }
 
-  public setConnection(status){
+  public setConnection(status) {
     this.zone.run(() => {
       this.connected = false;
     });
   }
 
-  public openInterface(log: string = '', cb) {
-    this.setStatus("opening interface");
+  public openInterface(log: String = '', cb) {
     let data = new Uint8Array(8);
     data[0] = 0x0d;
     data[1] = 0x0d;
@@ -139,11 +168,9 @@ export class HomePage {
 
     this.bluetoothSerial.write(data).then(
       status => {
-        this.setStatus("interface oppended");
         cb(status)
       },
       err => {
-        this.setStatus("Error on open interface");
         console.log('err', err);
       }
     )
@@ -175,16 +202,14 @@ export class HomePage {
   }
 
   public getVersion() {
-    this.bluetoothSerial.write('ver').then(
-      status => {
-        console.log(`ver: ${status}`);
-        this.setRequester('versão');
-        this.openInterface('ver', () => { });
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
+    try {
+      let deviceVersion = this.bluetoothSerial.write(R900Protocol.CMD_GET_VERSION);
+      console.log(`ver: ${deviceVersion}`);
+      this.setRequester('versão');
+      this.openInterface(R900Protocol.CMD_GET_VERSION, () => { });
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 
   public getInventory() {
@@ -281,8 +306,8 @@ export class HomePage {
         console.log('s', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data.slice(3,5));
-            this.batteryLevel = data.slice(3,5);
+            console.log("pure data : ", data.slice(3, 5));
+            this.batteryLevel = data.slice(3, 5);
             console.log("get invertory data : " + JSON.stringify(data))
           });
         });
@@ -309,5 +334,4 @@ export class HomePage {
       }
     )
   }
-
 }
