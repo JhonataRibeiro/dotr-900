@@ -17,14 +17,13 @@ export class HomePage {
   public connected: boolean = false;
   public batteryLevel: String = "";
   public inventoring:boolean = false;
-  public solicitante:String = "";
+  public requester:String = "";
 
   constructor(
-    public navCtrl: NavController,
+    private navCtrl: NavController,
     private bluetoothSerial: BluetoothSerial,
     private patrimonyProvider: PatrimonyProvider,
-    private cdr: ChangeDetectorRef,
-    public zone: NgZone, ) {
+    private zone: NgZone, ) {
       this.registerSubscribeData();
     }
 
@@ -32,11 +31,14 @@ export class HomePage {
     this.bluetoothSerial.subscribeRawData().subscribe((data) => {
       this.bluetoothSerial.read().then((data) => {
         console.log(data);
+        if((data.indexOf("online=0")) >= 0){
+          this.setConnection(false);
+        }
         this.parseTags(data);
-        if(this.solicitante == 'bateria'){
-          console.log(data.slice(6,8));
+        if(this.requester == 'battery'){
           this.zone.run(() => {
             this.batteryLevel = data.slice(6,8);
+            this.clearRequester();
           });
         }
       });
@@ -47,8 +49,12 @@ export class HomePage {
     this.status = status;
   }
 
-  public setSolicitante(param){
-    this.solicitante = param;
+  public setRequester(param){
+    this.requester = param;
+  }
+
+  public clearRequester(){
+    this.requester = '';
   }
 
   public scan() {
@@ -96,7 +102,7 @@ export class HomePage {
         }
       },
       err => {
-        console.log("error on connect: ", err);
+        if(err == 'error on connect:  Device connection was lost') this.setConnection(false); 
       }
     )
   }
@@ -108,8 +114,15 @@ export class HomePage {
       },
       err => {
         console.log("error on connect: ", err);
+        if(err == 'error on connect:  Device connection was lost') this.setConnection(false);         
       }
     )
+  }
+
+  public setConnection(status){
+    this.zone.run(() => {
+      this.connected = false;
+    });
   }
 
   public openInterface(log: string = '', cb) {
@@ -140,7 +153,7 @@ export class HomePage {
     try {
       let bateryLevel = await this.bluetoothSerial.write("Br.batt");
       this.openInterface('Br.batt', () => console.log('Br.batt sucssess'));
-      this.solicitante = 'bateria';
+      this.setRequester('battery');
     } catch (err) {
       console.log(`There was an error: ${err}`);
     }
@@ -165,7 +178,7 @@ export class HomePage {
     this.bluetoothSerial.write('ver').then(
       status => {
         console.log(`ver: ${status}`);
-        this.solicitante = 'versão';
+        this.setRequester('versão');
         this.openInterface('ver', () => { });
       },
       err => {
@@ -178,7 +191,7 @@ export class HomePage {
     this.bluetoothSerial.write('I').then(
       data => {
         this.inventoring = true;
-        this.solicitante = 'inventário';
+        this.setRequester('inventário');
         this.openInterface('stop', () => { });
       },
       err => {
