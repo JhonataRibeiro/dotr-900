@@ -1,13 +1,13 @@
 <ion-header>
   <ion-navbar>
 
-    <button *ngIf="!connected" (click)="scan()" ion-button icon-only>
+    <button (click)="scan()" ion-button icon-only>
       <ion-icon style="font-size:25px" ios="ios-search" md="md-search"></ion-icon>
     </button>
 
-    <button [disabled]="!connected" (click)="isConnected()" ion-button icon-only>
+    <!-- <button [disabled]="!connected" (click)="isConnected()" ion-button icon-only>
       <ion-icon ios="ios-warning" md="md-warning"></ion-icon>
-    </button>
+    </button> -->
 
 
     <button [disabled]="!connected" ion-button icon-only>
@@ -25,6 +25,10 @@
 
     <button [disabled]="!connected" (click)="clear()" ion-button icon-only>
       <ion-icon ios="ios-trash" md="md-trash"></ion-icon>
+    </button>
+
+    <button *ngIf="connected" (click)="sendDislink()" ion-button icon-only>
+      <ion-icon ios="ios-close" md="md-close"></ion-icon>
     </button>
 
     <button *ngIf="connected" (click)="turnOff()" ion-button icon-only>
