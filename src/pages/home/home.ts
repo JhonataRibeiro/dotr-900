@@ -68,7 +68,7 @@ export class HomePage {
     this.requester = '';
   }
 
-  public clearDevices(){
+  public clearDevices() {
     this.devices = [];
   }
 
@@ -127,6 +127,17 @@ export class HomePage {
     )
   }
 
+  public async sendDislink() {
+    try {
+      let bluetoothDislink = this.bluetoothSerial.write(R900Protocol.CMD_DISLINK);
+      this.openInterface('Br.off', () => console.log('Br.off sucssess'));
+      this.clearDevices();
+      console.log('bluetoothDislink: ', bluetoothDislink);
+    } catch (error) {
+      console.log('error: ', error);
+    }
+  }
+
   public async turnOff() {
     try {
       let bateryLevel = await this.bluetoothSerial.write("Br.off");
@@ -138,15 +149,12 @@ export class HomePage {
   }
 
   public isConnected() {
-    this.bluetoothSerial.isConnected().then(
-      status => {
-        console.log('isConnected=> ', status);
-      },
-      err => {
-        console.log("error on connect: ", err);
-        if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
-      }
-    )
+    try {
+      let isConnected = this.bluetoothSerial.isConnected();
+      console.log('isConnected=> ', isConnected);
+    } catch (error) {
+      console.log('error on connect: ', error);
+    }
   }
 
   public setConnection(status) {
@@ -166,14 +174,12 @@ export class HomePage {
     data[6] = 0x0d;
     data[7] = 0x0d;
 
-    this.bluetoothSerial.write(data).then(
-      status => {
-        cb(status)
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
+    try {
+      let response = this.bluetoothSerial.write(data);
+      cb(response);
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 
   public async getBatteryLevel() {
@@ -213,7 +219,7 @@ export class HomePage {
   }
 
   public getInventory() {
-    this.bluetoothSerial.write('I').then(
+    this.bluetoothSerial.write(R900Protocol.CMD_INVENT).then(
       data => {
         this.inventoring = true;
         this.setRequester('inventário');
@@ -226,7 +232,7 @@ export class HomePage {
   }
 
   public stop() {
-    this.bluetoothSerial.write('s').then(
+    this.bluetoothSerial.write(R900Protocol.CMD_STOP).then(
       data => {
         console.log('stop', data);
         this.inventoring = false;
