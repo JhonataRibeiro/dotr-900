@@ -57,8 +57,6 @@ export class HomePage {
               this.batteryLevel = result[0];
               console.log('batteryLevel',this.batteryLevel);
             }
-            
-            
             this.clearRequester();
           });
         }
