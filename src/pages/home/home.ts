@@ -35,7 +35,10 @@ export class HomePage {
   public registerSubscribeData() {
     this.bluetoothSerial.subscribeRawData().subscribe((data) => {
       this.bluetoothSerial.read().then((data) => {
-        console.log(data);
+
+        console.log('requeste: ', this.requester);
+        console.log('receiver data: ', data);
+
         if ((data.indexOf("online=0")) >= 0) {
           this.setConnection(false);
         }
@@ -48,7 +51,14 @@ export class HomePage {
         this.parseTags(data);
         if (this.requester == 'battery') {
           this.zone.run(() => {
-            this.batteryLevel = data.slice(6, 8);
+            // this.batteryLevel = data.slice(6, 8);
+            let result = data.match( /\d+/g );
+            if(result && result.length){
+              this.batteryLevel = result[0];
+              console.log('batteryLevel',this.batteryLevel);
+            }
+            
+            
             this.clearRequester();
           });
         }
@@ -72,24 +82,23 @@ export class HomePage {
     this.devices = [];
   }
 
-  public async scan() {
-    try {
-      this.checkBluetothIsEnabled();
-      let devicesFound = await this.bluetoothSerial.list();
+  public scan() {
+    this.bluetoothSerial.list().then(devicesFound => {
       this.devices = devicesFound;
-    } catch (error) {
+    }, error => {
       console.log('error: ', error);
-
-    }
+    });
   }
 
-  public async checkBluetothIsEnabled() {
-    try {
-      let bluethothStatus = await this.bluetoothSerial.isEnabled();
-      console.log('bluethothStatus =>', bluethothStatus);
-    } catch (error) {
-      console.log('error: ', error);
-    }
+  public checkBluetothIsEnabled() {
+    this.bluetoothSerial.isEnabled().then(
+      data => {
+        console.log('bluethothStatus =>', data);
+      },
+      error => {
+        console.log('error: ', error);
+      }
+    );
   }
 
   public handleConnection(item) {
@@ -97,64 +106,89 @@ export class HomePage {
       return;
     }
     this.connect(item, (statusConnection) => {
+      console.log('statusConnection: ', statusConnection);
       if (statusConnection == 'OK') {
         this.openInterface('from handleConnection', (statusOpenInterface) => {
+          console.log('statusOpenInterface: ', statusOpenInterface);
           if (statusOpenInterface == 'OK') {
-            this.getBatteryLevel();
             this.zone.run(() => {
               this.connected = true;
               this.clearDevices();
             });
+            this.getBatteryLevel();
           }
         })
       }
     })
   }
 
-  public connect(item, cb = null) {
+  public connect(item, cb) {
     if (!item) {
       return;
     }
     this.bluetoothSerial.connect(item.address).subscribe(
       status => {
-        if (cb) {
-          cb(status);
-        }
+        cb(status);
       },
       err => {
-        if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
+        this.message.notify('Error on Connecting, restart device!');
+        console.log('Error on Connecting: ', err);
+        this.setConnection(false);
       }
     )
   }
 
-  public async sendDislink() {
-    try {
-      let bluetoothDislink = this.bluetoothSerial.write(R900Protocol.CMD_DISLINK);
-      this.openInterface('Br.off', () => console.log('Br.off sucssess'));
-      this.clearDevices();
-      console.log('bluetoothDislink: ', bluetoothDislink);
-    } catch (error) {
-      console.log('error: ', error);
-    }
+  public sendDislink() {
+    this.bluetoothSerial.write(R900Protocol.CMD_DISLINK).then(
+      data => {
+        this.openInterface('Br.off', () => console.log('Br.off sucssess'));
+        this.clearDevices();
+        this.setConnection(false);
+        this.sendDisconnectDeviceBluetooth();
+        console.log('bluetoothDislink: ', data);
+      },
+      error => {
+        console.log('error: ', error);
+      }
+    )
   }
 
-  public async turnOff() {
-    try {
-      let bateryLevel = await this.bluetoothSerial.write("Br.off");
-      this.openInterface('Br.off', () => console.log('Br.off sucssess'));
-      this.clearDevices();
-    } catch (err) {
-      console.log(`There was an error: ${err}`);
-    }
+  public sendDisconnectDeviceBluetooth() {
+    this.bluetoothSerial.disconnect().then(
+      data => {
+        this.openInterface('disconnect', () => console.log('disconnect'));
+        this.clearDevices();
+        this.setConnection(false);
+        console.log('disconnect: ', data);
+      },
+      error => {
+        console.log('error: ', error);
+      }
+    )
+  }
+
+  public turnOff() {
+    this.bluetoothSerial.write(R900Protocol.CMD_TURN_READER_OFF).then(
+      data => {
+        this.openInterface('Br.off', () => console.log('Br.off sucssess'));
+        this.clearDevices();
+      },
+      error => {
+        console.log(`There was an error: ${error}`);
+      }
+    );
   }
 
   public isConnected() {
-    try {
-      let isConnected = this.bluetoothSerial.isConnected();
-      console.log('isConnected=> ', isConnected);
-    } catch (error) {
-      console.log('error on connect: ', error);
-    }
+    this.bluetoothSerial.isConnected().then(
+      status => {
+        console.log('isConnected=> ', status);
+      },
+      err => {
+        console.log("error on connect: ", err);
+        if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
+      }
+    )
   }
 
   public setConnection(status) {
@@ -174,22 +208,26 @@ export class HomePage {
     data[6] = 0x0d;
     data[7] = 0x0d;
 
-    try {
-      let response = this.bluetoothSerial.write(data);
-      cb(response);
-    } catch (error) {
-      console.log('error', error);
-    }
+    this.bluetoothSerial.write(data).then(
+      status => {
+        cb(status)
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
   }
 
-  public async getBatteryLevel() {
-    try {
-      let bateryLevel = await this.bluetoothSerial.write("Br.batt");
-      this.openInterface('Br.batt', () => console.log('Br.batt sucssess'));
-      this.setRequester('battery');
-    } catch (err) {
-      console.log(`There was an error: ${err}`);
-    }
+  public getBatteryLevel() {
+    this.bluetoothSerial.write(R900Protocol.CMD_GET_BATT_LEVEL).then(
+      data => {
+        this.openInterface('Br.batt', () => console.log('Br.batt sucssess'));
+        this.setRequester('battery');
+      },
+      error => {
+        console.log(`There was an error: ${error}`);
+      }
+    );
   }
 
   public toogleBeep(param) {
