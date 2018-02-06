@@ -15,12 +15,12 @@ export class HomePage {
 
   public devices: Array<any> = [];
   public tags: Array<any> = [];
-  public status: string = "";
+  public status: string = '';
   public showBeep: boolean = false;
   public connected: boolean = false;
-  public batteryLevel: String = "";
+  public batteryLevel: String = '';
   public inventoring: boolean = false;
-  public requester: String = "";
+  public requester: String = '';
 
   constructor(
     private navCtrl: NavController,
@@ -39,11 +39,11 @@ export class HomePage {
         console.log('requeste: ', this.requester);
         console.log('receiver data: ', data);
 
-        if ((data.indexOf("online=0")) >= 0) {
+        if ((data.indexOf('online=0')) >= 0) {
           this.setConnection(false);
         }
 
-        if ((data.indexOf("CONNECT F0D7AA6993CE")) >= 0) {
+        if ((data.indexOf('CONNECT F0D7AA6993CE')) >= 0) {
           this.setConnection(false);
           this.message.notify('Erro ao conectar, reinicie o device(DOTR-900) e tente novamente!');
         }
@@ -52,16 +52,27 @@ export class HomePage {
         if (this.requester == 'battery') {
           this.zone.run(() => {
             // this.batteryLevel = data.slice(6, 8);
-            let result = data.match( /\d+/g );
-            if(result && result.length){
+            let result = data.match(/\d+/g);
+            if (result && result.length) {
               this.batteryLevel = result[0];
-              console.log('batteryLevel',this.batteryLevel);
+              console.log('batteryLevel', this.batteryLevel);
             }
             this.clearRequester();
           });
         }
       });
     });
+  }
+
+  public openInterface(log: String = '', cb) {
+    this.bluetoothSerial.write(R900Protocol.OPEN_INTERFACE_1).then(
+      status => {
+        cb(status)
+      },
+      err => {
+        console.log('err', err);
+      }
+    )
   }
 
   public setStatus(status) {
@@ -183,7 +194,7 @@ export class HomePage {
         console.log('isConnected=> ', status);
       },
       err => {
-        console.log("error on connect: ", err);
+        console.log('error on connect: ', err);
         if (err == 'error on connect:  Device connection was lost') this.setConnection(false);
       }
     )
@@ -193,27 +204,6 @@ export class HomePage {
     this.zone.run(() => {
       this.connected = false;
     });
-  }
-
-  public openInterface(log: String = '', cb) {
-    let data = new Uint8Array(8);
-    data[0] = 0x0d;
-    data[1] = 0x0d;
-    data[2] = 0x0d;
-    data[3] = 0x0d;
-    data[4] = 0x0d;
-    data[5] = 0x0d;
-    data[6] = 0x0d;
-    data[7] = 0x0d;
-
-    this.bluetoothSerial.write(data).then(
-      status => {
-        cb(status)
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
   }
 
   public getBatteryLevel() {
@@ -285,7 +275,7 @@ export class HomePage {
 
     let filteredTags = tagsSplited.filter((tag) => {
       let stringTag = new String(tag);
-      return stringTag.startsWith("3") && stringTag.length == 32
+      return stringTag.startsWith('3') && stringTag.length == 32
     });
 
     filteredTags.forEach(element => {
@@ -343,14 +333,14 @@ export class HomePage {
   }
 
   public writeTag() {
-    this.bluetoothSerial.write("w,16,2,5,mesa").then(
+    this.bluetoothSerial.write('w,16,2,5,mesa').then(
       data => {
         console.log('s', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data.slice(3, 5));
+            console.log('pure data : ', data.slice(3, 5));
             this.batteryLevel = data.slice(3, 5);
-            console.log("get invertory data : " + JSON.stringify(data))
+            console.log('get invertory data : ' + JSON.stringify(data))
           });
         });
       },
@@ -366,8 +356,8 @@ export class HomePage {
         console.log('s', data);
         this.bluetoothSerial.subscribeRawData().subscribe((data) => {
           this.bluetoothSerial.read().then((data) => {
-            console.log("pure data : ", data)
-            console.log("get invertory data : " + JSON.stringify(data))
+            console.log('pure data : ', data)
+            console.log('get invertory data : ' + JSON.stringify(data))
           });
         });
       },
