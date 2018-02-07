@@ -332,24 +332,6 @@ export class HomePage {
     this.tags = [];
   }
 
-  public writeTag() {
-    this.bluetoothSerial.write('w,16,2,5,mesa').then(
-      data => {
-        console.log('s', data);
-        this.bluetoothSerial.subscribeRawData().subscribe((data) => {
-          this.bluetoothSerial.read().then((data) => {
-            console.log('pure data : ', data.slice(3, 5));
-            this.batteryLevel = data.slice(3, 5);
-            console.log('get invertory data : ' + JSON.stringify(data))
-          });
-        });
-      },
-      err => {
-        console.log('err', err);
-      }
-    )
-  }
-
   public sendReader() {
     this.bluetoothSerial.write('s').then(
       data => {
@@ -367,3 +349,5 @@ export class HomePage {
     )
   }
 }
+
+
