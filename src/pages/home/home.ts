@@ -38,9 +38,6 @@ export class HomePage {
     this.bluetoothSerial.subscribeRawData().subscribe((data) => {
       this.bluetoothSerial.read().then((data) => {
 
-        console.log('requeste: ', this.requester);
-        console.log('receiver data: ', data);
-
         if ((data.indexOf('online=0')) >= 0) {
           this.setConnection(false);
         }
