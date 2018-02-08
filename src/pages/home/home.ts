@@ -5,6 +5,7 @@ import { PatrimonyProvider } from '../../providers/patrimony/patrimony';
 import { Loader } from '../../utils/loader/loader';
 import { Message } from '../../utils/message/message';
 import { R900Protocol } from '../../utils/protocol/r900Protocol'
+import { Platform } from 'ionic-angular/platform/platform';
 
 @Component({
   selector: 'page-home',
@@ -28,8 +29,9 @@ export class HomePage {
     private patrimonyProvider: PatrimonyProvider,
     private zone: NgZone,
     private loader: Loader,
-    private message: Message) {
-    this.registerSubscribeData();
+    private message: Message,
+    private platform: Platform) {
+    if(this.platform.is('Cordova')) this.registerSubscribeData();
   }
 
   public registerSubscribeData() {
